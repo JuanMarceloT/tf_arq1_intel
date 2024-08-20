@@ -1,0 +1,11 @@
+Posição inicial
+# 1,2,3
+# 2,4,10
+# 3,7,5
+
+Movimentos
+: 1,2,NE
+: 2,3,S
+: A,5,O
+: 2,5,L
+

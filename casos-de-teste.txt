@@ -1,0 +1,17 @@
+
+1 Duas rainhas não podem ocupar o mesmo espaço.
+	a Posicionamento
+	b Movimento
+2 As rainhas devem permanecer dentro do tabuleiro.
+	a Posicionamento
+	b Movimento
+3 Devem ser verificados eventuais parâmetros inválidos, no posicionamento.
+	a Identificador de rainha inválido (deve ser valor entre 0 e 9).
+	b Identificado de rainha não pode ser repetido no posicionamento.
+4 Devem ser verificados eventuais parâmetros inválidos, na movimentação.
+	a Identificador de rainha inválido (deve ser valor entre 0 e 9).
+	b Tentativa de mover uma rainha que não foi posicionada no tabuleiro ou está fora do tabuleiro.
+	c Distância de movimentação invalida (deve ser valor entre 0 e 127).
+	d Direção de movimentação inválida.
+5 Relatorio final.
+

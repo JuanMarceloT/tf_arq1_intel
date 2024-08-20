@@ -1,0 +1,55 @@
+>>> in1a
+[004] Rainha 3 posicionada nas mesmas coordenadas da rainha 1.
+Rainha 1: (9,10)
+Rainha 2: (9,7)
+
+>>> in1b
+[009] Rainha 3 bloqueada pela rainha 1.
+Rainha 1: (4,5)
+Rainha 2: (9,7)
+Rainha 3: (5,5)
+
+>>> in2a
+[002] Coordenada X invalida.
+
+>>> in2b
+[009] Rainha 3 saiu do tabuleiro na posicao (7,0).
+Rainha 1: (4,5)
+Rainha 2: (9,7)
+
+>>> in3a
+[003] Identificar de rainha nao reconhecido.
+
+>>> in3b
+[004] Redefinicao de identificador de rainha.
+
+>>> in4a
+[009] Identificar de rainha nao reconhecido.
+
+>>> in4b
+[008] Rainha nao posicionada.
+
+>>> in4c
+[009] Espacos de movimentacao invalido.
+
+>>> in4d
+[010] Direcao de movimentacao invalida.
+
+>>> in5
+Rainha 1: (6,6)
+Rainha 2: (6,5)
+Rainha 3: (6,4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
