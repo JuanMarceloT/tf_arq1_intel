@@ -12,6 +12,9 @@
     movement_y db 1 dup(0)
     filename db 'in1a.txt$', 0 ; Name of the file to read
 
+    temp_x db 0
+    temp_y db 0
+
     double_nums db 0
 
     close_esq db '[ $', 0
@@ -27,6 +30,8 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     error_coordenada_x db ' ] Coordenada X invalida.$', 0
     error_coordenada_y db ' ] Coordenada Y invalida.$', 0
     error_redefinicao db ' ] Redefinicao de identificador de rainha.$', 0
+    error_same_coordinates_1 db ' ] Rainha $', 0
+    error_same_coordinates_2 db ' posicionada nas mesmas coordenadas da rainha $', 0
 
 
     queen_identifier db -1
@@ -107,7 +112,7 @@ ini:
     JGE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
 
     mov queen_identifier, dl
-    sub queen_identifier, 47 ;ascii
+    sub queen_identifier, 48 ;ascii
 
     push si
     push cx
@@ -190,6 +195,13 @@ second:
     cmp double_nums, 65
     JGE error_coordenada_x_func
 
+    push ax
+
+    mov al, double_nums
+    mov temp_x, al
+
+    pop ax
+
     inc     si
 
     mov     dl, ' '       
@@ -246,6 +258,32 @@ espaco:
     cmp double_nums, 65
     JGE error_coordenada_y_func
 
+    push ax
+
+    mov al, double_nums
+    mov temp_y, al
+
+    pop ax
+
+    call verify_unique_coordinates
+
+    push si
+    push ax
+
+    mov ax, 0
+    mov al, queen_identifier
+    mov si, ax
+
+    mov ah, temp_x
+
+    mov rainhas_x[si], ah
+
+    mov ah, temp_y
+
+    mov rainhas_y[si], ah
+
+    pop ax
+    pop si
 
     call pula_linha
     jmp     print_2
@@ -451,6 +489,35 @@ error_redefinicao_func:
     jmp exit
 
 
+error_same_coordinates_func:
+
+    call pula_linha
+
+    MOV AH,09H 
+    lea dx, close_esq
+    int 21H
+
+    mov    ax, line
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_same_coordinates_1
+    int 21H
+
+    mov ax, 0
+    mov al, queen_identifier
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_same_coordinates_2
+    int 21H
+
+    mov ax, si
+    call WriteWord
+
+    jmp exit
+
+
 
 pula_linha proc near
     mov     dl, 0Dh       ; ASCII code for carriage return (CR)
@@ -486,6 +553,40 @@ error_func proc near
     ret
 
 error_func endp
+
+
+verify_unique_coordinates proc near
+
+    push si
+
+    mov si,-1
+
+    mov bx, 0
+
+loop_verify_unique_coordinates:
+    cmp si, 10
+    jz fim_verify_unique_coordinates
+
+    inc si
+
+    mov bl, rainhas_x[si]
+
+    cmp bl, temp_x
+    jnz loop_verify_unique_coordinates
+
+    mov bl, rainhas_y[si]
+
+    cmp bl, temp_y
+    jnz loop_verify_unique_coordinates
+
+    call error_same_coordinates_func
+
+
+fim_verify_unique_coordinates:
+    pop si
+    ret
+
+verify_unique_coordinates endp
 
 exit: 
     end
