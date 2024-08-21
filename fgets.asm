@@ -6,8 +6,8 @@
     buffer db 128 dup(0)   
     index db 1 dup(5)
     rainhas db 9 dup(0)
-    rainhas_x db 9 dup(-1)
-    rainhas_y db 9 dup(-1)
+    rainhas_x db 9 dup(0)
+    rainhas_y db 9 dup(0)
     movement_x db 1 dup(0)
     movement_y db 1 dup(0)
     filename db 'in1a.txt$', 0 ; Name of the file to read
@@ -18,6 +18,11 @@
     double_nums db 0
 
     close_esq db '[ $', 0
+
+    final_output db 'Rainha ', 0
+    final_output_1 db ': (', 0
+    final_output_2 db ',', 0
+    final_output_3 db ')', 0
     
 BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
 
@@ -32,6 +37,9 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     error_redefinicao db ' ] Redefinicao de identificador de rainha.$', 0
     error_same_coordinates_1 db ' ] Rainha $', 0
     error_same_coordinates_2 db ' posicionada nas mesmas coordenadas da rainha $', 0
+    error_rainha_nao_posicionada db ' ] Rainha nao posicionada.$', 0
+    error_espacos_movimentacao_invalido db ' ] Espacos de movimentacao invalido.$', 0
+    error_direcao_invalida db ' ] Direcao de movimentacao invalida.$', 0
 
 
     queen_identifier db -1
@@ -59,6 +67,8 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     mov ah, 09h          ; Print string function
     lea dx, buffer       
     call Printf         
+
+    call print_rainhas_if_exist
 
     mov ah, 3Eh          ; Close file
     int 21h     
@@ -105,33 +115,7 @@ ini:
 	mov		ah,2		
 	int		21H
 
-    CMP dl, 47      ; Compara DL com codigo ascii do 0
-    JLE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
-
-    CMP dl, 56      ; Compara DL com codigo ascii do 9
-    JGE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
-
-    mov queen_identifier, dl
-    sub queen_identifier, 48 ;ascii
-
-    push si
-    push cx
-
-    mov cx,0
-
-    mov cl, queen_identifier
-
-    mov si, cx
-
-    mov cl , rainhas[si]
-    cmp cl, 1
-    jz     error_redefinicao_func
-
-    mov rainhas[si], 1
-
-    pop cx
-    pop si
-
+    call verify_if_rainha
 
     inc     si
 
@@ -274,6 +258,7 @@ espaco:
     mov al, queen_identifier
     mov si, ax
 
+
     mov ah, temp_x
 
     mov rainhas_x[si], ah
@@ -301,21 +286,71 @@ dots_case:
 	mov		ah,2		
 	int		21H
 
+    call   verify_if_rainha_mov
+
+    inc     si
+
+    mov		dl,buffer[si]
+    cmp	dl,","
+    jz     first_mov
+
+    cmp	dl," "
+    jz     first_mov
+
+    jmp error_rainha_nao_reconhecida_func
+
+
+first_mov:
+    inc     si
     mov     dl, ' '       
     int     21h           ; Call DOS interrupt
+    mov double_nums, 0
 
-    inc     si
-    inc     si
-
+first_mov_loop:
     mov		dl,buffer[si]
 
 	mov		ah,2		
 	int		21H
 
-    mov     dl, ' '       
-    int     21h           ; Call DOS interrupt
+    cmp    double_nums, 0
+    jz     add_to_double_nums_x_mov
+
+    push ax
+    push bx
+    mov ax, 0
+    mov al, double_nums
+    mov bl, 10
+    mul bl
+
+    mov double_nums, al
+
+    cmp ah, 0
+    jg error_coordenada_y_func
+    
+    pop bx
+    pop ax
+
+add_to_double_nums_x_mov: 
+    add double_nums, dl
+    sub double_nums, 48 ; ascii code 
 
     inc     si
+
+    mov		dl,buffer[si]
+    cmp	dl,","
+    jz     second_mov
+
+    cmp	dl," "
+    jz     second_mov
+
+    jmp first_mov_loop
+
+
+second_mov:   
+
+    cmp double_nums, 127
+    Jae error_espacos_movimentacao_invalido_func
+    
     inc     si
 
     mov		dl,buffer[si]
@@ -329,8 +364,74 @@ dots_case:
     jz      two_letters_case
     cmp     dl, 'S'
     jz      two_letters_case
+    cmp     dl, 'L'
+    jz      L_Case
+    cmp     dl, 'O'
+    jz      two_letters_case
 
-    jmp		print_2	
+    jmp		error_direcao_invalida_func	
+
+
+L_Case:
+    mov movement_x,1
+    mov movement_y,0
+
+    jmp		print_2
+
+O_Case:
+    mov movement_x,-1
+    mov movement_y,0
+
+    jmp		print_2
+
+N_Case:
+
+    inc     si
+
+    mov        dl,buffer[si]
+
+    cmp     dl, 'E'
+    jz      NE_Case
+    cmp     dl, 'O'
+    jz      NO_Case
+N_alone_case:
+    mov movement_x,0
+    mov movement_y,1
+    jmp		print_2
+
+NE_Case:   
+    mov movement_x,1
+    mov movement_y,1
+    jmp		print_2
+NO_Case:
+    mov movement_x,-1
+    mov movement_y,1
+    jmp		print_2
+
+S_Case:
+    inc     si
+
+    mov        dl,buffer[si]
+
+    cmp     dl, 'E'
+    jz      SE_Case
+    cmp     dl, 'O'
+    jz      SO_Case
+S_alone_case:
+    mov movement_x,0
+    mov movement_y,-1
+    jmp		print_2
+
+SE_Case:   
+    mov movement_x,1
+    mov movement_y,-1
+    jmp		print_2
+SO_Case:
+    mov movement_x,-1
+    mov movement_y,-1
+    jmp		print_2
+
+
 
 two_letters_case:
 
@@ -489,6 +590,25 @@ error_redefinicao_func:
     jmp exit
 
 
+error_rainha_nao_posicionada_func:
+    lea dx, error_rainha_nao_posicionada
+    call error_func
+
+    jmp exit
+
+error_espacos_movimentacao_invalido_func:
+
+    lea dx, error_espacos_movimentacao_invalido
+    call error_func
+
+    jmp exit
+
+error_direcao_invalida_func:
+    lea dx, error_direcao_invalida
+    call error_func
+
+    jmp exit
+
 error_same_coordinates_func:
 
     call pula_linha
@@ -587,6 +707,136 @@ fim_verify_unique_coordinates:
     ret
 
 verify_unique_coordinates endp
+
+
+
+
+
+
+;print 
+
+print_rainhas_if_exist proc near
+
+    call pula_linha
+    call pula_linha
+
+    push si
+
+    mov si,-1
+
+    mov bx, 0
+    mov ax, 0
+
+loop_print_rainhas_if_exist:
+    cmp si, 9
+    jz fim_print_rainhas_if_exist
+
+    inc si
+
+    mov al, rainhas[si]
+
+    cmp al, 1
+    jnz loop_print_rainhas_if_exist
+
+
+    lea bx, final_output
+    call WriteString
+
+    mov ax, si
+    call WriteWord
+
+    lea bx, final_output_1
+    call WriteString
+
+    mov ax, 0
+
+    mov al, rainhas_x[si]
+    call WriteWord
+
+    lea bx, final_output_2
+    call WriteString
+
+    mov ax, 0
+
+    mov al, rainhas_y[si]
+    call WriteWord
+
+    lea bx, final_output_3
+    call WriteString
+
+    call pula_linha
+
+    jmp loop_print_rainhas_if_exist
+
+
+fim_print_rainhas_if_exist:
+    pop si
+    ret
+
+print_rainhas_if_exist endp
+
+
+
+verify_if_rainha proc near
+    CMP dl, 47      ; Compara DL com codigo ascii do 0
+    JLE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
+
+    CMP dl, 56      ; Compara DL com codigo ascii do 9
+    JGE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
+
+    mov queen_identifier, dl
+    sub queen_identifier, 48 ;ascii
+
+    push si
+    push cx
+
+    mov cx,0
+    mov cl, queen_identifier
+
+    mov si, cx
+
+    mov cl , rainhas[si]
+    cmp cl, 1
+    jz     error_redefinicao_func
+
+    mov rainhas[si], 1
+
+    pop cx
+    pop si
+
+    ret
+
+verify_if_rainha endp
+
+verify_if_rainha_mov proc near
+    CMP dl, 47      ; Compara DL com codigo ascii do 0
+    JLE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
+
+    CMP dl, 56      ; Compara DL com codigo ascii do 9
+    JGE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
+
+    mov queen_identifier, dl
+    sub queen_identifier, 48 ;ascii
+
+    push si
+    push cx
+
+    mov cx,0
+
+    mov cl, queen_identifier
+
+    mov si, cx
+
+    mov cl , rainhas[si]
+    cmp cl, 1
+    jnz error_rainha_nao_posicionada_func
+
+    pop cx
+    pop si
+
+    ret
+
+verify_if_rainha_mov endp
 
 exit: 
     end
