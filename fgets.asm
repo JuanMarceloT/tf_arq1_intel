@@ -10,7 +10,7 @@
     rainhas_y db 9 dup(0)
     movement_x db 1 dup(0)
     movement_y db 1 dup(0)
-    filename db 'in1a.txt$', 0 ; Name of the file to read
+    filename db 'in2b.txt$', 0 ; Name of the file to read
 
     temp_x db 0
     temp_y db 0
@@ -40,6 +40,7 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     error_rainha_nao_posicionada db ' ] Rainha nao posicionada.$', 0
     error_espacos_movimentacao_invalido db ' ] Espacos de movimentacao invalido.$', 0
     error_direcao_invalida db ' ] Direcao de movimentacao invalida.$', 0
+    error_fora_tabuleiro db ' saiu do tabuleiro na posicao ($'
 
 
     queen_identifier db -1
@@ -83,7 +84,7 @@ Printf	proc	near
 print_2:
 	mov		dl,buffer[si]		; While (*S!='\0') {
     inc		si
-    cmp     dl, 13
+    cmp     dl, 0Ah
     jnz   test_if_end
     inc   line
 test_if_end:
@@ -358,16 +359,16 @@ second_mov:
 	mov		ah,2		
 	int		21H
 
-    
+    inc si
 
     cmp     dl, 'N'
-    jz      two_letters_case
+    jz      N_Case
     cmp     dl, 'S'
-    jz      two_letters_case
+    jz      S_Case
     cmp     dl, 'L'
     jz      L_Case
     cmp     dl, 'O'
-    jz      two_letters_case
+    jz      O_Case
 
     jmp		error_direcao_invalida_func	
 
@@ -376,19 +377,20 @@ L_Case:
     mov movement_x,1
     mov movement_y,0
 
-    jmp		print_2
+    jmp		movementation
 
 O_Case:
     mov movement_x,-1
     mov movement_y,0
 
-    jmp		print_2
+    jmp		movementation
 
 N_Case:
 
-    inc     si
 
     mov        dl,buffer[si]
+
+    inc     si
 
     cmp     dl, 'E'
     jz      NE_Case
@@ -397,21 +399,23 @@ N_Case:
 N_alone_case:
     mov movement_x,0
     mov movement_y,1
-    jmp		print_2
+    jmp		movementation
 
 NE_Case:   
     mov movement_x,1
     mov movement_y,1
-    jmp		print_2
+    jmp		movementation
 NO_Case:
     mov movement_x,-1
     mov movement_y,1
-    jmp		print_2
+    jmp		movementation
 
 S_Case:
-    inc     si
 
     mov        dl,buffer[si]
+     
+    inc     si
+    
 
     cmp     dl, 'E'
     jz      SE_Case
@@ -420,37 +424,107 @@ S_Case:
 S_alone_case:
     mov movement_x,0
     mov movement_y,-1
-    jmp		print_2
+    jmp		movementation
 
 SE_Case:   
     mov movement_x,1
     mov movement_y,-1
-    jmp		print_2
+    jmp		movementation
 SO_Case:
     mov movement_x,-1
     mov movement_y,-1
-    jmp		print_2
+    jmp		movementation
 
+    mov_index dw 0
+movementation:
 
+    push ax
+    mov ax, 0
+    mov al, double_nums
+    mov mov_index, ax
 
-two_letters_case:
+    pop ax
 
-    inc     si
+mov_loop:
+    cmp mov_index, 0
+    jz print_2
 
-    mov        dl,buffer[si]
+    push si
+    push ax
 
-    cmp     dl, 'E'
-    jz      have_two_letters
-    cmp     dl, 'O'
-    jnz      print_2
+    dec mov_index
 
-have_two_letters:
+    mov ax, 0
+    mov al, queen_identifier
 
-    mov        ah,2        
-    int        21H
+    mov si, ax
 
-    inc     si
-	jmp		print_2		
+    mov bl, double_nums
+
+    mov al, movement_x
+    mul bl
+
+    add al, rainhas_x[si]
+
+    mov rainhas_x[si], al
+
+    mov al, movement_y
+    mul bl
+
+    add al, rainhas_y[si]
+
+    mov rainhas_y[si], al
+
+    mov rainhas_y[si], al
+
+    cmp rainhas_x[si], 0
+    JL error_out_table_x_zero
+    cmp rainhas_y[si], 0
+    JL error_out_table_y_zero
+
+    cmp rainhas_x[si], 15
+    JG error_out_table_x_plus
+    cmp rainhas_y[si], 11
+    JG error_out_table_y_plus
+
+    pop ax
+    pop si
+
+    jmp print_2
+error_out_table_x_zero:
+    mov rainhas_x[si], 0
+    ; call error_out_table_func
+
+    pop ax
+    pop si
+
+    jmp        print_2
+error_out_table_y_zero:
+    mov rainhas_y[si], 0
+    call error_out_table_func
+
+    pop ax
+    pop si
+
+    jmp        print_2
+
+error_out_table_x_plus:
+    mov rainhas_x[si], 15
+    ; call error_out_table_func
+
+    pop ax
+    pop si
+
+    jmp        print_2
+error_out_table_y_plus:
+    mov rainhas_y[si], 11
+    call error_out_table_func
+
+    pop ax
+    pop si
+
+    jmp        print_2
+
 Printf	endp
 
 ;
@@ -460,6 +534,11 @@ Printf	endp
 ;        (S) -> DS:BX -> Ponteiro para o string de destino
 ;--------------------------------------------------------------------
 HexToDecAscii	proc near
+
+        push cx
+        push ax
+        push dx
+        push si
 
 		mov	cx,0			;N = 0;
 H2DA_2:
@@ -508,7 +587,13 @@ H2DA_4:
 		dec	bx				;	--j
 		jmp	H2DA_4
 
+
+
 H2DA_3:
+        pop si
+        pop dx
+        pop ax
+        pop cx
 		ret
 
 HexToDecAscii	endp
@@ -608,6 +693,67 @@ error_direcao_invalida_func:
     call error_func
 
     jmp exit
+
+
+error_out_table_func proc near
+    ; call pula_linha
+
+
+    ; push si
+     push ax
+    ; push bx
+    ; push cx
+     push dx
+
+
+    MOV AH,09H 
+    lea dx, close_esq
+    int 21H
+
+    mov    ax, line
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_same_coordinates_1
+    int 21H
+
+    mov ax, si
+    mov al, queen_identifier
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_fora_tabuleiro
+    int 21H
+
+    mov ax, 0
+
+    mov al, rainhas_x[si]
+    call WriteWord
+
+    lea bx, final_output_2
+    call WriteString
+
+    mov ax, 0
+
+    mov al, rainhas_y[si]
+    call WriteWord
+
+    lea bx, final_output_3
+    call WriteString
+
+    pop dx 
+    ; pop cx
+    ; pop bx
+    pop ax
+    ; pop si
+    
+    ; call pula_linha
+    
+    ret
+
+error_out_table_func endp
+
+
 
 error_same_coordinates_func proc near
 
