@@ -609,7 +609,13 @@ error_direcao_invalida_func:
 
     jmp exit
 
-error_same_coordinates_func:
+error_same_coordinates_func proc near
+
+    push si
+    push ax
+    push bx
+    push cx
+    push dx
 
     call pula_linha
 
@@ -635,15 +641,38 @@ error_same_coordinates_func:
     mov ax, si
     call WriteWord
 
-    jmp exit
+    mov rainhas[si], 0
 
+    mov ax, 0
+    mov al, queen_identifier
+
+    mov si, ax
+
+    mov rainhas[si], 0
+
+    pop dx 
+    pop cx
+    pop bx
+    pop ax
+    pop si
+    
+    call pula_linha
+    
+    ret
+
+error_same_coordinates_func endp
 
 
 pula_linha proc near
+
+    push dx
+
     mov     dl, 0Dh       ; ASCII code for carriage return (CR)
     int     21h           ; Call DOS interrupt
     mov     dl, 0Ah       
     int     21h           ; Call DOS interrupt
+
+    pop dx
 
     ret
 pula_linha endp
