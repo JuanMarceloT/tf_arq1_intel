@@ -10,7 +10,7 @@
     rainhas_y db 9 dup(0)
     movement_x db 1 dup(0)
     movement_y db 1 dup(0)
-    filename db 'in2b.txt$', 0 ; Name of the file to read
+    filename db 'in1a.txt$', 0 ; Name of the file to read
 
     temp_x db 0
     temp_y db 0
@@ -32,16 +32,16 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
 
     ;error message
     error_rainha_nao_reconhecida db ' ] Identificar de rainha nao reconhecido.$', 0
-    error_coordenada_x db ' ] Coordenada X invalida.$', 0
     error_coordenada_y db ' ] Coordenada Y invalida.$', 0
+    error_coordenada_x db ' ] Coordenada X invalida.$', 0
     error_redefinicao db ' ] Redefinicao de identificador de rainha.$', 0
     error_same_coordinates_1 db ' ] Rainha $', 0
     error_same_coordinates_2 db ' posicionada nas mesmas coordenadas da rainha $', 0
     error_rainha_nao_posicionada db ' ] Rainha nao posicionada.$', 0
     error_espacos_movimentacao_invalido db ' ] Espacos de movimentacao invalido.$', 0
     error_direcao_invalida db ' ] Direcao de movimentacao invalida.$', 0
-    error_fora_tabuleiro db ' saiu do tabuleiro na posicao ($'
-
+    error_fora_tabuleiro db ' saiu do tabuleiro na posicao ($', 0
+    error_bloqueada db ' bloqueada pela rainha $', 0
 
     queen_identifier db -1
     queen_x db -1
@@ -436,12 +436,16 @@ SO_Case:
     jmp		movementation
 
     mov_index dw 0
+    is_blocked db 0
+    queen_blocked_1 db 0
+    queen_blocked_2 db 0
 movementation:
 
     push ax
     mov ax, 0
     mov al, double_nums
     mov mov_index, ax
+    mov is_blocked, 0
 
     pop ax
 
@@ -459,24 +463,41 @@ mov_loop:
 
     mov si, ax
 
-    mov bl, double_nums
+    push bx
 
-    mov al, movement_x
-    mul bl
+    mov bl, movement_x
+    mov bh, movement_y
 
-    add al, rainhas_x[si]
+    add rainhas_x[si], bl
+    add rainhas_y[si], bh
 
-    mov rainhas_x[si], al
+    pop bx
 
-    mov al, movement_y
-    mul bl
+    call verify_if_blocked
+    cmp is_blocked, 0
+    jz  error_treatment
 
-    add al, rainhas_y[si]
+    push bx
 
-    mov rainhas_y[si], al
+    mov bl, movement_x
+    mov bh, movement_y
 
-    mov rainhas_y[si], al
+    sub rainhas_x[si], bl
+    sub rainhas_y[si], bh
 
+    ;colocar erro do bloqueio vou dormir ta louco
+
+    pop bx
+
+    pop ax
+    pop si
+
+    ; call error_blocked
+
+    jmp print_2
+
+
+error_treatment:
     cmp rainhas_x[si], 0
     JL error_out_table_x_zero
     cmp rainhas_y[si], 0
@@ -490,7 +511,7 @@ mov_loop:
     pop ax
     pop si
 
-    jmp print_2
+    jmp mov_loop
 error_out_table_x_zero:
     mov rainhas_x[si], 0
     ; call error_out_table_func
@@ -526,6 +547,76 @@ error_out_table_y_plus:
     jmp        print_2
 
 Printf	endp
+
+
+
+verify_if_blocked proc near
+    
+    push dx
+    push cx
+    push bx
+    push si
+    push ax
+
+    mov cx, si  ; index of the queen
+
+    mov is_blocked, 0
+
+    mov bl, rainhas_x[si] ; x position of the queen
+    mov bh, rainhas_y[si] ; y position of the queen
+
+    mov si, 10
+
+verify_if_blocked_loop:
+    dec si
+    cmp si, 0
+    jz return_verify_if_blocked
+
+    cmp cx, si
+    jz verify_if_blocked_loop
+
+    cmp rainhas[si], 1
+    jnz verify_if_blocked_loop
+
+    cmp bl, rainhas_x[si]
+    jnz verify_if_blocked_loop
+
+    cmp bh, rainhas_y[si]
+    jnz verify_if_blocked_loop
+
+    push cx
+    mov cx, si
+    mov queen_blocked_2, cl
+
+    pop cx
+    
+    mov queen_blocked_1, cl
+
+    ; mov ax, 0
+    ; mov al, queen_blocked_1
+    ; call WriteWord
+    ; mov ax, 0
+    ; mov al, queen_blocked_2
+    ; call WriteWord
+
+    call error_blocked
+
+    mov is_blocked, 1
+    jmp return_verify_if_blocked
+
+
+return_verify_if_blocked:
+
+    pop ax
+    pop si
+    pop bx
+    pop cx
+    pop dx 
+
+    ret
+
+
+verify_if_blocked endp
 
 ;
 ;--------------------------------------------------------------------
@@ -696,7 +787,7 @@ error_direcao_invalida_func:
 
 
 error_out_table_func proc near
-    ; call pula_linha
+    ; call pula_linhanear
 
 
     ; push si
@@ -752,6 +843,53 @@ error_out_table_func proc near
     ret
 
 error_out_table_func endp
+
+
+
+error_blocked proc near
+    ; call pula_linhanear
+
+    ; push si
+     push ax
+    ; push bx
+    ; push cx
+     push dx
+
+
+    MOV AH,09H 
+    lea dx, close_esq
+    int 21H
+
+    mov    ax, line
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_same_coordinates_1
+    int 21H
+
+    mov ax, 0
+    mov al, queen_blocked_1
+    call WriteWord
+
+    MOV AH,09H 
+    lea dx, error_bloqueada
+    int 21H
+
+    mov ax, 0
+    mov al, queen_blocked_2
+    call WriteWord
+
+    pop dx 
+    ; pop cx
+    ; pop bx
+    pop ax
+    ; pop si
+    
+    ; call pula_linha
+    
+    ret
+
+error_blocked endp
 
 
 
@@ -825,6 +963,7 @@ pula_linha endp
 
 error_func proc near
 
+    push ax
     push dx
 
     mov		ah,2			; Envia CRLF
@@ -844,6 +983,8 @@ error_func proc near
     MOV AH,09H 
     pop dx
     int 21H
+
+    pop ax
 
     ret
 
