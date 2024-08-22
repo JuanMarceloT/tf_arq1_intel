@@ -22,6 +22,7 @@
     final_output db 'Rainha ', 0
     final_output_1 db ': (', 0
     final_output_2 db ',', 0
+    final_positon db 'Posição final', 0
     final_output_3 db ')', 0
     
 BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
@@ -114,7 +115,7 @@ ini:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     call verify_if_rainha
 
@@ -131,15 +132,15 @@ ini:
 
 first:
     inc     si
-    mov     dl, ' '       
-    int     21h           ; Call DOS interrupt
+    ; mov     dl, ' '       
+    ; int     21h           ; Call DOS interrupt
     mov double_nums, 0
 
 first_loop:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     cmp    double_nums, 0
     jz     add_to_double_nums_x
@@ -189,8 +190,8 @@ second:
 
     inc     si
 
-    mov     dl, ' '       
-    int     21h           ; Call DOS interrupt
+    ; mov     dl, ' '       
+    ; int     21h           ; Call DOS interrupt
 
     mov double_nums, 0
 
@@ -198,7 +199,7 @@ second_loop:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     cmp    double_nums, 0
     jz     add_to_double_nums_y
@@ -271,21 +272,21 @@ espaco:
     pop ax
     pop si
 
-    call pula_linha
+    ; call pula_linha
     jmp     print_2
 
 
 
 dots_case:
 
-    call pula_linha
+    ; call pula_linha
 
     inc     si
 
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     call   verify_if_rainha_mov
 
@@ -304,14 +305,14 @@ dots_case:
 first_mov:
     inc     si
     mov     dl, ' '       
-    int     21h           ; Call DOS interrupt
+    ; int     21h           ; Call DOS interrupt
     mov double_nums, 0
 
 first_mov_loop:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     cmp    double_nums, 0
     jz     add_to_double_nums_x_mov
@@ -357,7 +358,7 @@ second_mov:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	int		21H
+	; int		21H
 
     inc si
 
@@ -832,6 +833,7 @@ error_out_table_func proc near
     lea bx, final_output_3
     call WriteString
 
+
     pop dx 
     ; pop cx
     ; pop bx
@@ -1033,8 +1035,7 @@ verify_unique_coordinates endp
 
 print_rainhas_if_exist proc near
 
-    call pula_linha
-    call pula_linha
+    ; call pula_linha
 
     push si
 
@@ -1043,7 +1044,14 @@ print_rainhas_if_exist proc near
     mov bx, 0
     mov ax, 0
 
+
+    lea bx, final_positon
+    call WriteString
+
+    call pula_linha
 loop_print_rainhas_if_exist:
+
+
     cmp si, 9
     jz fim_print_rainhas_if_exist
 
