@@ -11,18 +11,20 @@
     movement_x db 1 dup(0)
     movement_y db 1 dup(0)
     filename db 'in1a.txt$', 0 ; Name of the file to read
+    FileNameDst		db		"out.txt"		; Nome do arquivo a ser escrito
 
     temp_x db 0
     temp_y db 0
 
+    pula_linha_string db 0DH,0Ah,0
+
     double_nums db 0
 
-    close_esq db '[ $', 0
+    close_esq db '[ ', 0
 
     final_output db 'Rainha ', 0
     final_output_1 db ': (', 0
     final_output_2 db ',', 0
-    final_positon db 'Posição final', 0
     final_output_3 db ')', 0
     
 BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
@@ -32,24 +34,34 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
 
 
     ;error message
-    error_rainha_nao_reconhecida db ' ] Identificar de rainha nao reconhecido.$', 0
-    error_coordenada_y db ' ] Coordenada Y invalida.$', 0
-    error_coordenada_x db ' ] Coordenada X invalida.$', 0
-    error_redefinicao db ' ] Redefinicao de identificador de rainha.$', 0
-    error_same_coordinates_1 db ' ] Rainha $', 0
-    error_same_coordinates_2 db ' posicionada nas mesmas coordenadas da rainha $', 0
-    error_rainha_nao_posicionada db ' ] Rainha nao posicionada.$', 0
-    error_espacos_movimentacao_invalido db ' ] Espacos de movimentacao invalido.$', 0
-    error_direcao_invalida db ' ] Direcao de movimentacao invalida.$', 0
-    error_fora_tabuleiro db ' saiu do tabuleiro na posicao ($', 0
-    error_bloqueada db ' bloqueada pela rainha $', 0
+    error_rainha_nao_reconhecida db ' ] Identificar de rainha nao reconhecido.', 0
+    error_coordenada_y db ' ] Coordenada Y invalida.', 0
+    error_coordenada_x db ' ] Coordenada X invalida.', 0
+    error_redefinicao db ' ] Redefinicao de identificador de rainha.', 0
+    error_same_coordinates_1 db ' ] Rainha ', 0
+    error_same_coordinates_2 db ' posicionada nas mesmas coordenadas da rainha ', 0
+    error_rainha_nao_posicionada db ' ] Rainha nao posicionada.', 0
+    error_espacos_movimentacao_invalido db ' ] Espacos de movimentacao invalido.', 0
+    error_direcao_invalida db ' ] Direcao de movimentacao invalida.', 0
+    error_fora_tabuleiro db ' saiu do tabuleiro na posicao (', 0
+    error_bloqueada db ' bloqueada pela rainha ', 0
 
     queen_identifier db -1
     queen_x db -1
     queen_y db -1
 
+
+
+    file_handler dw 0
+
 .code
 .startup
+
+    lea		dx,FileNameDst
+	call	fcreate
+
+    ; mov     bx, error_blocked
+    ; call    WriteString
 
     mov ah, 3Dh          ; open file
     mov al, 0            ; Read mode
@@ -74,6 +86,8 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
 
     mov ah, 3Eh          ; Close file
     int 21h     
+
+    jmp exit
 
 .exit
 
@@ -735,6 +749,26 @@ WS_1:
 		mov		ah,2		; 	Int21(2)
 		int		21H
 
+        ; mov		ah,40h		; 	Int21(2)
+		; mov     cx, 1
+		; int		21H
+
+        push bx
+        push dx
+
+
+        mov dx, bx
+        mov bx, file_handler
+        mov		ah,40h	;		Int21(2)
+		mov     cx, 1
+		int		21H
+
+        pop dx
+        pop bx
+
+
+        
+
 		inc		bx			; 	++S
 		jmp		WS_2		; }
 
@@ -798,24 +832,21 @@ error_out_table_func proc near
      push dx
 
 
-    MOV AH,09H 
-    lea dx, close_esq
-    int 21H
+    lea bx, close_esq
+    call    WriteString
 
     mov    ax, line
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_same_coordinates_1
-    int 21H
+    lea bx, error_same_coordinates_1
+    call    WriteString
 
     mov ax, si
     mov al, queen_identifier
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_fora_tabuleiro
-    int 21H
+    lea bx, error_fora_tabuleiro
+    call    WriteString
 
     mov ax, 0
 
@@ -834,13 +865,16 @@ error_out_table_func proc near
     call WriteString
 
 
+    mov rainhas[si], 0
+
+    call pula_linha
+
     pop dx 
     ; pop cx
     ; pop bx
     pop ax
     ; pop si
     
-    ; call pula_linha
     
     ret
 
@@ -858,24 +892,21 @@ error_blocked proc near
      push dx
 
 
-    MOV AH,09H 
-    lea dx, close_esq
-    int 21H
+    lea bx, close_esq
+    call    WriteString
 
     mov    ax, line
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_same_coordinates_1
-    int 21H
+    lea bx, error_same_coordinates_1
+    call    WriteString
 
     mov ax, 0
     mov al, queen_blocked_1
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_bloqueada
-    int 21H
+    lea bx, error_same_coordinates_1
+    call    WriteString
 
     mov ax, 0
     mov al, queen_blocked_2
@@ -887,7 +918,7 @@ error_blocked proc near
     pop ax
     ; pop si
     
-    ; call pula_linha
+    call pula_linha
     
     ret
 
@@ -905,29 +936,26 @@ error_same_coordinates_func proc near
 
     call pula_linha
 
-    MOV AH,09H 
-    lea dx, close_esq
-    int 21H
+    lea bx, close_esq
+    call    WriteString
 
     mov    ax, line
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_same_coordinates_1
-    int 21H
+    lea bx, error_same_coordinates_1
+    call    WriteString
 
     mov ax, 0
     mov al, queen_identifier
     call WriteWord
 
-    MOV AH,09H 
-    lea dx, error_same_coordinates_2
-    int 21H
+    lea bx, error_same_coordinates_2
+    call    WriteString
 
     mov ax, si
     call WriteWord
 
-    mov rainhas[si], 0
+    ; mov rainhas[si], 0
 
     mov ax, 0
     mov al, queen_identifier
@@ -953,10 +981,8 @@ pula_linha proc near
 
     push dx
 
-    mov     dl, 0Dh       ; ASCII code for carriage return (CR)
-    int     21h           ; Call DOS interrupt
-    mov     dl, 0Ah       
-    int     21h           ; Call DOS interrupt
+    lea bx, pula_linha_string
+    call    WriteString
 
     pop dx
 
@@ -975,16 +1001,15 @@ error_func proc near
 	mov		dl,10
 	int		21H
 
-    MOV AH,09H 
-    lea dx, close_esq
-    int 21H
+    lea bx, close_esq
+    call    WriteString
 
     mov    ax, line
     call WriteWord
 
-    MOV AH,09H 
     pop dx
-    int 21H
+    mov bx, dx
+    call    WriteString
 
     pop ax
 
@@ -1044,11 +1069,6 @@ print_rainhas_if_exist proc near
     mov bx, 0
     mov ax, 0
 
-
-    lea bx, final_positon
-    call WriteString
-
-    call pula_linha
 loop_print_rainhas_if_exist:
 
 
@@ -1095,6 +1115,7 @@ loop_print_rainhas_if_exist:
 
 fim_print_rainhas_if_exist:
     pop si
+    jmp exit
     ret
 
 print_rainhas_if_exist endp
@@ -1132,6 +1153,14 @@ verify_if_rainha proc near
 
 verify_if_rainha endp
 
+fcreate	proc	near
+	mov		cx,0
+	mov		ah,3ch
+	int		21h
+	mov		file_handler,ax
+	ret
+fcreate	endp
+
 verify_if_rainha_mov proc near
     CMP dl, 47      ; Compara DL com codigo ascii do 0
     JLE error_rainha_nao_reconhecida_func  ; Salta para error_rainha_nao_reconhecida_func
@@ -1163,4 +1192,7 @@ verify_if_rainha_mov proc near
 verify_if_rainha_mov endp
 
 exit: 
+    mov ah, 4Ch    ; Function 4Ch is used to terminate a program
+    mov al, 0      ; Return code 0 
+    int 21h        ; Call DOS interrupt to terminate the program
     end
