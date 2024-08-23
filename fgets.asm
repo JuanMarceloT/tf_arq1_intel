@@ -10,7 +10,7 @@
     rainhas_y db 9 dup(0)
     movement_x db 1 dup(0)
     movement_y db 1 dup(0)
-    filename db 'in1a.txt$', 0 ; Name of the file to read
+    filename db 'in.txt$', 0                ; Nome do arquivo a ser lido
     FileNameDst		db		"out.txt"		; Nome do arquivo a ser escrito
 
     temp_x db 0
@@ -60,21 +60,17 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     lea		dx,FileNameDst
 	call	fcreate
 
-    ; mov     bx, error_blocked
-    ; call    WriteString
-
-    mov ah, 3Dh          ; open file
-    mov al, 0            ; Read mode
+    mov ah, 3Dh          ; Abrir arquivo
+    mov al, 0            ; modo leitura
     lea dx, filename     
     int 21h              
     mov bx, ax           
 
-    ; Check if file opened 
-    cmp ax, 0FFh         ; check 0FFh (error code)
+    cmp ax, 0FFh         ; 0FFh (error code)
     je exit              
 
-    mov ah, 3Fh          ; read from file
-    mov cx, 512          ; Number of bytes to read
+    mov ah, 3Fh          ; Ler do arquivo
+    mov cx, 512          ; Bytes que serão lidos
     lea dx, buffer       
     int 21h              
 
@@ -85,7 +81,7 @@ BufferWRWORD	DB	10 DUP(?)	; Para uso dentro de WriteWord
     call print_rainhas_if_exist
 
     mov ah, 3Eh          ; Close file
-    int 21h     
+    int 21h   
 
     jmp exit
 
@@ -146,8 +142,6 @@ ini:
 
 first:
     inc     si
-    ; mov     dl, ' '       
-    ; int     21h           ; Call DOS interrupt
     mov double_nums, 0
 
 first_loop:
@@ -203,9 +197,6 @@ second:
     pop ax
 
     inc     si
-
-    ; mov     dl, ' '       
-    ; int     21h           ; Call DOS interrupt
 
     mov double_nums, 0
 
@@ -286,14 +277,11 @@ espaco:
     pop ax
     pop si
 
-    ; call pula_linha
     jmp     print_2
 
 
 
 dots_case:
-
-    ; call pula_linha
 
     inc     si
 
@@ -319,14 +307,12 @@ dots_case:
 first_mov:
     inc     si
     mov     dl, ' '       
-    ; int     21h           ; Call DOS interrupt
     mov double_nums, 0
 
 first_mov_loop:
     mov		dl,buffer[si]
 
 	mov		ah,2		
-	; int		21H
 
     cmp    double_nums, 0
     jz     add_to_double_nums_x_mov
@@ -500,14 +486,10 @@ mov_loop:
     sub rainhas_x[si], bl
     sub rainhas_y[si], bh
 
-    ;colocar erro do bloqueio vou dormir ta louco
-
     pop bx
 
     pop ax
     pop si
-
-    ; call error_blocked
 
     jmp print_2
 
@@ -529,7 +511,6 @@ error_treatment:
     jmp mov_loop
 error_out_table_x_zero:
     mov rainhas_x[si], 0
-    ; call error_out_table_func
 
     pop ax
     pop si
@@ -546,7 +527,6 @@ error_out_table_y_zero:
 
 error_out_table_x_plus:
     mov rainhas_x[si], 15
-    ; call error_out_table_func
 
     pop ax
     pop si
@@ -606,13 +586,6 @@ verify_if_blocked_loop:
     pop cx
     
     mov queen_blocked_1, cl
-
-    ; mov ax, 0
-    ; mov al, queen_blocked_1
-    ; call WriteWord
-    ; mov ax, 0
-    ; mov al, queen_blocked_2
-    ; call WriteWord
 
     call error_blocked
 
@@ -822,13 +795,9 @@ error_direcao_invalida_func:
 
 
 error_out_table_func proc near
-    ; call pula_linhanear
 
-
-    ; push si
      push ax
-    ; push bx
-    ; push cx
+
      push dx
 
 
@@ -883,12 +852,9 @@ error_out_table_func endp
 
 
 error_blocked proc near
-    ; call pula_linhanear
 
-    ; push si
      push ax
-    ; push bx
-    ; push cx
+
      push dx
 
 
@@ -905,7 +871,7 @@ error_blocked proc near
     mov al, queen_blocked_1
     call WriteWord
 
-    lea bx, error_same_coordinates_1
+    lea bx, error_bloqueada
     call    WriteString
 
     mov ax, 0
@@ -913,10 +879,9 @@ error_blocked proc near
     call WriteWord
 
     pop dx 
-    ; pop cx
-    ; pop bx
+
     pop ax
-    ; pop si
+ 
     
     call pula_linha
     
@@ -994,13 +959,6 @@ error_func proc near
     push ax
     push dx
 
-    mov		ah,2			; Envia CRLF
-	mov		dl,13
-	int		21H
-	mov		ah,2
-	mov		dl,10
-	int		21H
-
     lea bx, close_esq
     call    WriteString
 
@@ -1060,7 +1018,6 @@ verify_unique_coordinates endp
 
 print_rainhas_if_exist proc near
 
-    ; call pula_linha
 
     push si
 
@@ -1115,7 +1072,6 @@ loop_print_rainhas_if_exist:
 
 fim_print_rainhas_if_exist:
     pop si
-    jmp exit
     ret
 
 print_rainhas_if_exist endp
@@ -1192,7 +1148,7 @@ verify_if_rainha_mov proc near
 verify_if_rainha_mov endp
 
 exit: 
-    mov ah, 4Ch    ; Function 4Ch is used to terminate a program
-    mov al, 0      ; Return code 0 
-    int 21h        ; Call DOS interrupt to terminate the program
+    mov ah, 4Ch    
+    mov al, 0      
+    int 21h        
     end
